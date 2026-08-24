@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+html { background: #f4f5f1; }
+body { margin: 0; color: #17211c; background: #f4f5f1; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+::selection { background: #d9e9df; }
+@layer components {
+  .field { @apply min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-forest-600 focus:ring-4 focus:ring-forest-100; }
+  .label { @apply mb-2 block text-sm font-semibold text-slate-700; }
+  .btn-primary { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-forest-800 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-forest-900 focus:outline-none focus:ring-4 focus:ring-forest-100 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-secondary { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:opacity-50; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white shadow-soft; }
+}

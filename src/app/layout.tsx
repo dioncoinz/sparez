@@ -1,0 +1,13 @@
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: { default: "Sparez", template: "%s · Sparez" },
+  description: "Catalogue, locate and manage spare parts across industrial laydown areas.",
+};
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#19332a" };
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en"><body>{children}</body></html>;
+}

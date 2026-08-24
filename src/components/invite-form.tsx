@@ -1,0 +1,6 @@
+"use client";
+import { useActionState } from "react";
+import { Check, MailPlus } from "lucide-react";
+import { inviteUser } from "@/app/actions/admin";
+import type { ActionState } from "@/app/actions/items";
+export function InviteForm(){const[state,action,pending]=useActionState<ActionState,FormData>(inviteUser,{});return <form action={action} className="card p-5 sm:p-6"><h2 className="font-bold">Invite a team member</h2><p className="mt-1 text-sm text-slate-500">They’ll receive an email to set up secure access.</p><div className="mt-5 grid gap-4 sm:grid-cols-[1fr_150px_auto]"><div><label className="label" htmlFor="email">Email address</label><input className="field" id="email" name="email" type="email" required placeholder="person@company.com"/></div><div><label className="label" htmlFor="role">Role</label><select className="field" id="role" name="role"><option value="user">User</option><option value="admin">Admin</option></select></div><button disabled={pending} className="btn-primary self-end"><MailPlus className="h-4 w-4"/>{pending?"Inviting…":"Send invite"}</button></div>{state.error&&<p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{state.error}</p>}{state.ok&&<p className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700"><Check className="h-4 w-4"/>Invitation sent and access assigned.</p>}</form>}

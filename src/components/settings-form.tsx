@@ -1,0 +1,6 @@
+"use client";
+import { useActionState } from "react";
+import { Check, Save } from "lucide-react";
+import { updateOrganisation } from "@/app/actions/admin";
+import type { ActionState } from "@/app/actions/items";
+export function SettingsForm({name,slug}:{name:string;slug:string}){const[state,action,pending]=useActionState<ActionState,FormData>(updateOrganisation,{});return <form action={action} className="card p-5 sm:p-6"><div><label className="label" htmlFor="name">Organisation name</label><input className="field" id="name" name="name" defaultValue={name} required maxLength={120}/></div><div className="mt-5"><label className="label" htmlFor="slug">Workspace identifier</label><input className="field bg-slate-50 text-slate-500" id="slug" value={slug} disabled/><p className="mt-2 text-xs text-slate-400">Contact support to change the permanent workspace identifier.</p></div>{state.error&&<p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{state.error}</p>}{state.ok&&<p className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700"><Check className="h-4 w-4"/>Organisation settings saved.</p>}<button disabled={pending} className="btn-primary mt-6"><Save className="h-4 w-4"/>{pending?"Saving…":"Save settings"}</button></form>}
