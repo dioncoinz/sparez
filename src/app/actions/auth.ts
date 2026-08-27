@@ -21,3 +21,16 @@ export async function login(formData: FormData) {
   redirect("/dashboard");
 }
 export async function signOut() { const supabase = await createClient(); await supabase.auth.signOut(); redirect("/login"); }
+
+export async function setPassword(_previous: { error?: string }, formData: FormData): Promise<{ error?: string }> {
+  const password = String(formData.get("password") || "");
+  const confirmation = String(formData.get("password_confirmation") || "");
+  if (password.length < 8) return { error: "Use at least 8 characters." };
+  if (password !== confirmation) return { error: "The passwords do not match." };
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login?error=That invitation link has expired. Ask an administrator for a new invitation.");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: error.message };
+  redirect("/dashboard");
+}
