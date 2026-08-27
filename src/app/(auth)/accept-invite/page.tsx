@@ -16,14 +16,20 @@ export default function AcceptInvitePage() {
     setError(undefined);
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get("token_hash");
+    const type = params.get("type");
     if (!tokenHash) {
       setError("This invitation is missing its security token. Ask an administrator for a new invitation.");
       setPending(false);
       return;
     }
+    if (type !== "invite" && type !== "recovery") {
+      setError("This invitation has an unsupported security token. Ask an administrator for a new invitation.");
+      setPending(false);
+      return;
+    }
 
     const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "invite" });
+    const { error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (verifyError) {
       setError(verifyError.message);
       setPending(false);

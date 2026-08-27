@@ -112,6 +112,7 @@ Important ownership and tenant fields are protected by triggers. Items use soft 
 - Supabase's default SMTP only delivers to members of the Supabase organisation. Configure custom SMTP before inviting arbitrary email addresses.
 - Set `NEXT_PUBLIC_APP_URL` to the public production domain, and do not protect that production domain with Vercel Authentication. Protected preview/deployment URLs are restricted to Vercel organisation members.
 - To prevent corporate email scanners from consuming one-time invitation links, set the Supabase **Invite user** email template button URL to `{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&type=invite`. The acceptance page verifies the token only after the recipient presses its button.
+- Set the Supabase **Reset password** email template button URL to `{{ .SiteURL }}/accept-invite?token_hash={{ .TokenHash }}&type=recovery`. Existing Auth users receive this setup link when an administrator restores their organisation access.
 - Keep leaked-password protection enabled and choose an appropriate password policy.
 - Add the production callback URL to the Auth redirect allow-list.
 - Store `SUPABASE_SERVICE_ROLE_KEY` only in server-side deployment secrets.
