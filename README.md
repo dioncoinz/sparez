@@ -119,6 +119,18 @@ Important ownership and tenant fields are protected by triggers. Items use soft 
 - Apply the migration before first deployment. It creates the private bucket and its policies.
 - Configure platform request/body limits if field teams routinely upload images near the 15 MB per-file bucket limit.
 
+### Daily emailed export
+
+Vercel calls `/api/cron/daily-export` every day at `09:00 UTC`, which is `17:00 AWST`. The endpoint generates the same Excel workbook as the manual admin export and sends it as an attachment through Resend.
+
+Configure these production environment variables in Vercel:
+
+- `RESEND_API_KEY`: a Resend API key permitted to send email.
+- `RESEND_FROM_EMAIL`: a sender on a verified Resend domain, such as `Sparez <no-reply@example.com>`.
+- `CRON_SECRET`: a random value at least 16 characters long; Vercel includes it as the cron request bearer token.
+- `DAILY_EXPORT_EMAIL`: defaults to `philippe.isard@greatland.com.au` when omitted.
+- `DAILY_EXPORT_ORGANISATION_ID`: optional while the database has exactly one organisation, but required if more organisations are added.
+
 ## Known MVP limitations
 
 - The schema supports multiple organisation memberships, but the UI currently opens the first active membership; an organisation switcher is the next multi-client enhancement.

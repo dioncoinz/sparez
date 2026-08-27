@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
-import ExcelJS from "exceljs";
 import { requireAdmin } from "@/lib/auth";
+import { buildOrganisationExport } from "@/lib/export-workbook";
 import { createClient } from "@/lib/supabase/server";
-import { availableQuantity, itemStatus } from "@/lib/utils";
-import type { Item, Movement } from "@/lib/types";
 
-export async function GET(){
-  const{membership}=await requireAdmin();const supabase=await createClient();
-  const{data,error}=await supabase.from("items").select("*, creator:profiles!items_created_by_fkey(full_name,email), item_photos(*), item_movements(*)").eq("organisation_id",membership.organisation_id).order("created_at",{ascending:true});
-  if(error)return NextResponse.json({error:error.message},{status:500}); const items=(data||[]) as unknown as Item[];
-  const paths=items.flatMap(i=>i.item_photos||[]).map(p=>p.storage_path);const signed=paths.length?await supabase.storage.from("item-photos").createSignedUrls(paths,60*60*24*7):{data:[]};const urls=new Map((signed.data||[]).map((u,i)=>[paths[i],u.signedUrl]));
-  const workbook=new ExcelJS.Workbook();workbook.creator="Sparez by Valeron";workbook.created=new Date();workbook.title=`${membership.organisation?.name} Sparez Register`;const sheet=workbook.addWorksheet("Parts Register",{views:[{state:"frozen",ySplit:1}]});
-  sheet.columns=[{header:"WO Number",key:"wo",width:14},{header:"Material Number",key:"material",width:17},{header:"Material Description",key:"description",width:34},{header:"Location",key:"location",width:30},{header:"Condition",key:"condition",width:22},{header:"Original Quantity",key:"original",width:17},{header:"Quantity Removed",key:"removed",width:18},{header:"Quantity Available",key:"available",width:19},{header:"Status",key:"status",width:22},{header:"Notes",key:"notes",width:38},{header:"Added By",key:"addedBy",width:24},{header:"Date Added",key:"date",width:20},{header:"Primary Photo",key:"primary",width:22},...Array.from({length:7},(_,i)=>({header:`Additional Photo ${i+1}`,key:`additional${i+1}`,width:22}))];
-  for(const item of items){const moves=(item.item_movements||[]) as Movement[];const active=moves.filter(m=>m.status==="active");const removed=active.reduce((s,m)=>s+(m.quantity_removed||0),0);const manual=active.some(m=>m.movement_type==="manual_removal");const photos=(item.item_photos||[]).sort((a,b)=>a.display_order-b.display_order);const primary=photos[0]?urls.get(photos[0].storage_path)||"":"";const additional=photos.slice(1).map(p=>urls.get(p.storage_path)||"").filter(Boolean);const additionalCells=Object.fromEntries(additional.map((url,index)=>[`additional${index+1}`,{text:`Open photo ${index+2}`,hyperlink:url}]));const row=sheet.addRow({wo:item.wo_number||"",material:item.material_number||"",description:item.material_description||"",location:item.location||"",condition:item.condition,original:item.quantity??"",removed:item.quantity===null?(manual?"Item removed":""):removed,available:availableQuantity(item.quantity,removed)??"",status:item.is_archived?"Archived":itemStatus(item.quantity,removed,manual),notes:item.notes||"",addedBy:item.creator?.full_name||item.creator?.email||"",date:new Date(item.created_at),primary:primary?{text:"Open primary photo",hyperlink:primary}:"",...additionalCells});row.getCell("date").numFmt="dd mmm yyyy hh:mm";for(const key of["primary",...Array.from({length:7},(_,i)=>`additional${i+1}`)]){const cell=row.getCell(key);if(cell.value)cell.font={color:{argb:"FF0563C1"},underline:true};}}
-  sheet.autoFilter={from:"A1",to:`T${Math.max(1,sheet.rowCount)}`};sheet.getRow(1).height=24;sheet.getRow(1).eachCell(cell=>{cell.font={bold:true,color:{argb:"FFFFFFFF"}};cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF19332A"}};cell.alignment={vertical:"middle"};});sheet.eachRow((row,index)=>{if(index>1){row.alignment={vertical:"top",wrapText:true};if(index%2===0)row.eachCell(cell=>cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF4F5F1"}});}});
-  const buffer=await workbook.xlsx.writeBuffer();const date=new Date().toISOString().slice(0,10);const slug=membership.organisation?.slug||"organisation";return new NextResponse(new Uint8Array(buffer),{headers:{"Content-Type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","Content-Disposition":`attachment; filename=\"${slug}-sparez-register-${date}.xlsx\"`,"Cache-Control":"no-store"}});
+export async function GET() {
+  const { membership } = await requireAdmin();
+  if (!membership.organisation) return NextResponse.json({ error: "Organisation not found." }, { status: 404 });
+  try {
+    const result = await buildOrganisationExport(await createClient(), membership.organisation);
+    return new NextResponse(result.bytes, { headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Content-Disposition": `attachment; filename="${result.filename}"`, "Cache-Control": "no-store" } });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create export." }, { status: 500 });
+  }
 }
