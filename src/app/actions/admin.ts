@@ -44,6 +44,18 @@ export async function inviteUser(_prev:ActionState,formData:FormData):Promise<Ac
     return{ok:true};
   }catch(e){return{error:e instanceof Error?e.message:"Unable to send invitation."}}
 }
-export async function setMemberAccess(userId:string,_prev:ActionState,formData:FormData):Promise<ActionState>{const{membership}=await requireAdmin();if(userId===membership.user_id)return{error:"You cannot change your own access here."};const role=String(formData.get("role"))==="admin"?"admin":"user";const active=formData.get("is_active")==="on";const supabase=await createClient();const{error}=await supabase.from("memberships").update({role,is_active:active}).eq("organisation_id",membership.organisation_id).eq("user_id",userId);if(error)return{error:error.message};revalidatePath("/users");return{ok:true}}
+export async function setMemberAccess(userId:string,_prev:ActionState,formData:FormData):Promise<ActionState>{
+  const {membership}=await requireAdmin();
+  if(userId===membership.user_id)return {error:"You cannot change your own access here."};
+  const role=formData.get("role");
+  if(role!=="admin"&&role!=="user")return {error:"Choose User or Admin."};
+  const active=formData.get("is_active")==="on";
+  const supabase=await createClient();
+  const {data,error}=await supabase.from("memberships").update({role,is_active:active}).eq("organisation_id",membership.organisation_id).eq("user_id",userId).select("id");
+  if(error)return {error:error.message};
+  if(!data?.length)return {error:"This member could not be updated. Refresh the users list and try again."};
+  revalidatePath("/users");
+  return {ok:true};
+}
 export async function removeMember(userId:string,_prev:ActionState):Promise<ActionState>{void _prev;const{membership}=await requireAdmin();if(userId===membership.user_id)return{error:"You cannot remove yourself from the organisation."};const admin=createAdminClient();const{error}=await admin.from("memberships").delete().eq("organisation_id",membership.organisation_id).eq("user_id",userId);if(error)return{error:error.message};revalidatePath("/users");return{ok:true}}
 export async function updateOrganisation(_prev:ActionState,formData:FormData):Promise<ActionState>{const{membership}=await requireAdmin();const name=String(formData.get("name")||"").trim();if(!name||name.length>120)return{error:"Organisation name must be between 1 and 120 characters."};const supabase=await createClient();const{error}=await supabase.from("organisations").update({name}).eq("id",membership.organisation_id);if(error)return{error:error.message};revalidatePath("/settings");revalidatePath("/dashboard");return{ok:true}}

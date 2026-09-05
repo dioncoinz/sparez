@@ -9,7 +9,7 @@ Sparez is a mobile-first spare-parts catalogue and laydown-yard management appli
 - Mobile camera capture, multi-photo previews, private Storage uploads and ordered photo metadata
 - Dashboard totals and recent activity
 - Responsive catalogue: mobile cards and desktop table
-- Search across WO number, material number, description and location
+- Search across WO number, material number, description, location and timestamped notes
 - Item detail, admin editing, soft archiving and movement history
 - Partial-quantity removals and manual removal for unquantified items
 - Admin-only auditable reversal of movements
@@ -108,6 +108,7 @@ Important ownership and tenant fields are protected by triggers. Items use soft 
 
 ## Production configuration
 
+- Email-link expiry is configured in Supabase Auth as `mailer_otp_exp = 604800` (7 days), verified through the Management API on 6 September 2026. This shared setting covers invitations, password recovery and other authentication email links. Links remain single-use and can be invalidated by a replacement link. Supabase's dashboard may cap this setting at 24 hours; preserve the seven-day value through the Management API.
 - Configure SMTP in Supabase Auth so invitation emails are reliable and branded.
 - Supabase's default SMTP only delivers to members of the Supabase organisation. Configure custom SMTP before inviting arbitrary email addresses.
 - Set `NEXT_PUBLIC_APP_URL` to the public production domain, and do not protect that production domain with Vercel Authentication. Protected preview/deployment URLs are restricted to Vercel organisation members.
@@ -134,7 +135,7 @@ Configure these production environment variables in Vercel:
 ## Known MVP limitations
 
 - The schema supports multiple organisation memberships, but the UI currently opens the first active membership; an organisation switcher is the next multi-client enhancement.
-- Register queries are capped at 250 records pending cursor pagination. Search is server-side within that result query.
+- Register queries use server-side search, column filters, sorting and 50-row pagination; detail drawers retain the loaded list and URL state.
 - Item photos can be arranged/removed before initial save; post-save photo management is not yet exposed in the admin edit form.
 - Excel photo URLs are signed for seven days because the Storage bucket is private. This keeps tenant isolation intact but means the links are not permanent archives.
 - Invitations rely on Supabase's configured email provider and redirect allow-list.
@@ -146,10 +147,14 @@ Configure these production environment variables in Vercel:
 ```bash
 npm run typecheck
 npm run lint
+npm test
+npm run test:ui
 npm run build
 ```
 
 The project uses strict TypeScript and currently installs with no reported npm audit vulnerabilities.
+
+See [implementation and rollout notes](docs/implementation-and-rollout.md) for the register upgrade migration, deployment order, test scope and synthetic-data screenshots. The upgrade migration must precede its application release.
 
 ## Login troubleshooting
 

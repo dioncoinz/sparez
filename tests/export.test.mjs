@@ -1,0 +1,20 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+import {mkdir} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import ExcelJS from 'exceljs';
+test('Excel exports retain long append-only note history without oversized cells',async()=>{
+  await mkdir('test-results',{recursive:true});
+  await build({entryPoints:['src/lib/export-workbook.ts'],bundle:true,platform:'node',format:'cjs',packages:'external',outfile:'test-results/export-test.cjs'});
+  const {buildOrganisationExport}=createRequire(import.meta.url)('../test-results/export-test.cjs');
+  const notes=Array.from({length:9},(_,i)=>({id:String(i),note_text:`Note ${i}: `+'x'.repeat(4990),created_at:'2026-09-06T00:00:00Z',is_legacy:false,author:{full_name:'Test User'}}));
+  const item={id:'part',material_number:'MAT-001',created_at:'2026-09-06T00:00:00Z',quantity:1,item_notes:notes};
+  const client={from:()=>({select:()=>({eq:()=>({order:async()=>({data:[item],error:null})})})})};
+  const result=await buildOrganisationExport(client,{id:'org',name:'Local test',slug:'local-test'});
+  const book=new ExcelJS.Workbook();await book.xlsx.load(result.bytes);
+  assert.equal(book.getWorksheet('Note History').rowCount,10);
+  const history=book.getWorksheet('Note History');assert.equal(history.getRow(2).getCell(5).value,notes[0].note_text);
+  const summary=book.getWorksheet('Parts Register').getRow(2).getCell(10).value;
+  assert.ok(summary.length<=32767);assert.ok(summary.includes('Note History worksheet'));
+});

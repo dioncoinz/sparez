@@ -11,4 +11,10 @@ export interface Item {
   material_description: string | null; location: string | null; quantity: number | null; condition: Condition;
   notes: string | null; is_archived: boolean; created_at: string; updated_at: string; created_by: string;
   creator?: Profile; item_photos?: ItemPhoto[]; item_movements?: Movement[];
+  item_notes?: ItemNote[]; item_stock_additions?: StockAddition[];
+  available_quantity?: number | null; status?: string; creator_name?: string | null;
+  latest_note?: string | null; latest_note_at?: string | null; latest_note_legacy?: boolean;
 }
+export interface ItemNote { id:string; note_text:string; created_at:string; is_legacy:boolean; author?:Profile; }
+export interface StockAddition { id:string; quantity_added:number; created_at:string; source:string; author?:Profile; }
+export interface DuplicateItem extends Item { reason:string; similarity_label:string; }
